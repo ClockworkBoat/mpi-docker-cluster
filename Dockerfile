@@ -1,22 +1,27 @@
 FROM ubuntu:22.04
 
-# 安装必要软件
-RUN apt-get update && apt-get install -y \
+# 安装必要软件包
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     openssh-server \
-    mpich \
+    openmpi-bin \
+    libopenmpi-dev \
     iputils-ping \
-    vim \
-    && mkdir /var/run/sshd
+    vim && \
+    mkdir -p /var/run/sshd && \
+    rm -rf /var/lib/apt/lists/*
 
-# 创建用户mpiuser并设置密码
+# 创建用户 mpiuser 并设置密码
 RUN useradd -ms /bin/bash mpiuser && echo "mpiuser:mpiuser" | chpasswd
 
-# 允许密码登录（方便调试，生产可禁用）
+# 允许密码登录
 RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# 设置ssh免密登录需要目录和权限
-RUN mkdir /home/mpiuser/.ssh && chown mpiuser:mpiuser /home/mpiuser/.ssh && chmod 700 /home/mpiuser/.ssh
+# 设置 ssh 权限目录
+RUN mkdir -p /home/mpiuser/.ssh && \
+    chown mpiuser:mpiuser /home/mpiuser/.ssh && \
+    chmod 700 /home/mpiuser/.ssh
 
-# 容器启动时启动SSH服务
+# 启动 ssh 服务
 CMD ["/usr/sbin/sshd", "-D"]
 
